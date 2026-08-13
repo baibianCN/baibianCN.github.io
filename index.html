@@ -1,303 +1,44 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>baibian 个人博客</title>
-<style>
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: "Microsoft Yahei", sans-serif;
-}
-body {
-    background: linear-gradient(135deg, #f0f4ff, #e8f0fe);
-    padding: 40px 20px;
-    color: #2d3748;
-    line-height: 1.7;
-}
-#inputName {
-    max-width: 520px;
-    margin: 80px auto 0;
-    background: #ffffff;
-    padding: 40px 35px;
-    border-radius: 16px;
-    box-shadow: 0 8px 30px rgba(66, 128, 224, 0.15);
-    text-align: center;
-}
-#inputName h3 {
-    font-size: 24px;
-    color: #2563eb;
-    margin-bottom: 24px;
-}
-#nic {
-    width: 100%;
-    padding: 14px 18px;
-    border: 1px solid #dbeafe;
-    border-radius: 10px;
-    font-size: 16px;
-    transition: 0.3s;
-    margin-bottom: 16px;
-}
-#nic:focus {
-    outline: none;
-    border-color: #2563eb;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
-}
-button {
-    padding: 12px 28px;
-    border: none;
-    border-radius: 10px;
-    background: linear-gradient(135deg, #2563eb, #4f46e5);
-    color: #fff;
-    font-size: 16px;
-    cursor: pointer;
-    transition: all 0.25s ease;
-}
-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 18px rgba(37, 99, 235, 0.3);
-}
-#main {
-    max-width: 900px;
-    margin: 0 auto;
-}
-.main-wrap {
-    background: #fff;
-    border-radius: 18px;
-    padding: 35px;
-    box-shadow: 0 10px 35px rgba(41, 98, 212, 0.12);
-}
-.header-bar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-bottom: 20px;
-}
-.header-bar h2 {
-    font-size: 28px;
-    color: #1e40af;
-}
-.header-bar p {
-    font-size: 17px;
-}
-.header-bar span {
-    color: #2563eb;
-    font-weight: bold;
-    font-size: 18px;
-}
-hr {
-    border: none;
-    height: 1px;
-    background: linear-gradient(to right, transparent, #cbd5e1, transparent);
-    margin: 28px 0;
-}
-h3 {
-    font-size: 20px;
-    color: #1e293b;
-    margin-bottom: 16px;
-    border-left: 4px solid #2563eb;
-    padding-left: 12px;
-}
-.soft-card {
-    background: #f8faff;
-    border-radius: 12px;
-    padding: 18px 22px;
-    margin-bottom: 16px;
-    transition: 0.25s;
-}
-.soft-card:hover {
-    background: #eff6ff;
-    transform: translateX(4px);
-}
-.soft-card b {
-    font-size: 18px;
-    color: #1d4ed8;
-}
-.soft-card a {
-    color: #2563eb;
-    text-decoration: none;
-}
-.soft-card a:hover {
-    text-decoration: underline;
-}
-/* 带图片博文容器 电脑左右排版 */
-.blog-item {
-    display: flex;
-    gap: 20px;
-    background: #f8faff;
-    border-radius: 14px;
-    padding: 20px;
-    margin-bottom: 20px;
-    align-items: flex-start;
-    transition: 0.3s;
-}
-.blog-item:hover {
-    box-shadow: 0 6px 22px rgba(37, 99, 235, 0.12);
-}
-/* 固定图片框架 */
-.blog-img-box {
-    flex-shrink: 0;
-    width: 260px;
-    height: 160px;
-    border-radius: 10px;
-    overflow: hidden;
-    border: 1px solid #e2e8f0;
-}
-.blog-img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    background: #ffffff;
-    transition: transform 0.3s ease;
-}
-.blog-img:hover {
-    transform: scale(1.08);
-}
-.blog-text {
-    flex: 1;
-}
-.blog-text h3 {
-    border: none;
-    padding: 0;
-    margin-bottom: 10px;
-}
-.blog-text h5 {
-    font-weight: normal;
-    color: #475569;
-    font-size: 15px;
-    margin: 6px 0;
-}
-.footer-text {
-    text-align: center;
-    color: #64748b;
-    margin-top: 40px;
-    font-size: 14px;
-}
-/* 手机端自动切换上下布局 */
-@media (max-width: 680px) {
-    .blog-item {
-        flex-direction: column;
-    }
-    .blog-img-box {
-        width: 100%;
-        height: 200px;
-    }
-    .header-bar {
-        flex-direction: column;
-        text-align: center;
-    }
-    body {
-        padding: 20px 12px;
-    }
-    .main-wrap {
-        padding: 22px 16px;
-    }
-}
-</style>
+    <meta charset="UTF-8">
+    <!-- 关键：禁止缩放，适配手机横屏 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>合金弹头2</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html, body {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background: #000;
+        }
+        /* 16:9 游戏比例容器，自动铺满屏幕宽度 */
+        .game-box {
+            width: 100%;
+            /* 16:9 比例换算 9÷16=56.25% */
+            padding-bottom: 56.25%;
+            position: relative;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        .game-box iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
+    </style>
 </head>
 <body>
-<div id="inputName">
-    <h3>欢迎来到 baibian 博客</h3>
-    <input type="text" id="nic" placeholder="请输入你的专属昵称">
-    <button onclick="go()">立即进入</button>
-</div>
-
-<div id="main" style="display:none;">
-    <div class="main-wrap">
-        <div class="header-bar">
-            <h2>baibian博客站</h2>
-            <p>欢迎你：<span id="n"></span> <button onclick="change()" style="padding:6px 14px;font-size:14px;">换昵称</button></p>
-        </div>
-
-        <hr>
-        <h3>站点介绍</h3>
-        <p>因为站长懒得写所以就没有……</p>
-
-        <hr>
-        <h3>软件分享列表</h3>
-        <div class="soft-card">
-            <b>cupcut</b><br>
-            更新：2026-08-01<br>
-            简介：简单好用，全免费<br>
-            下载：<a href="https://pan.gfwl.top/s/8l20FL" target="_blank">https://pan.gfwl.top/s/8l20FL</a>
-        </div>
-        <div class="soft-card">
-            <b>液态玻璃灵动岛</b><br>
-            更新：2026-08-01<br>
-            简介：画面流畅<br>
-            下载：<a href="https://pan.xunlei.com/s/VOzQCsXXGI1MkZDH1ozpMh-CA1?pwd=kgab" target="_blank">点我下载</a>
-        </div>
-
-        <hr>
-        <h3>博文列表</h3>
-
-        <!-- 示例博文，下面新增文章复制我给你的模板粘贴在这里 -->
-        <div class="blog-item">
-            <div class="blog-text">
-                <h3>1. 关于 github官网进不去解决方法</h3>
-                <h5>GitHub 访问慢可以用加速器</h5>
-                <h5>就比如我用的 watt toolkit 里面有加速功能，可以加速～2026.8.1</h5>
-            </div>
-        </div>
-        <div class="blog-item">
-    <div class="blog-img-box">
-        <img class="blog-img" src="1.jpg" alt="博文配图" onerror="this.src='https://via.placeholder.com/520x320?text=暂无图片'">
+    <div class="game-box">
+        <iframe src="https://classicjoy.games/embed?slug=metal-slug-2" allowfullscreen></iframe>
     </div>
-    <div class="blog-text">
-        <h3>这就是猫和虎的区别</h3>
-        <h5>梗图分享～2026.8.1</h5>
-        <h5></h5>
-    </div>
-    
-    <div class="blog-item">
-    <div class="blog-img-box">
-        <img class="blog-img" src="6.png" alt="博文配图" onerror="this.src='https://via.placeholder.com/520x320?text=暂无图片'">
-    </div>
-    <div class="blog-text">
-        <h3>太热了</h3>
-        <h5>我们这里不只是热，还闷～2026.8.2</h5>
-        <h5></h5>
-    </div>
-</div>
-
-</div>
-
-
-        <hr>
-        <div class="footer-text">© 2026 baibian 个人博客 · All Rights Reserved</div>
-    </div>
-</div>
-
-<script>
-function showWelcome(){
-    alert("欢迎来到 baibian 博客");
-}
-window.onload=function(){
- let name=localStorage.getItem("nicname");
- if(name){
-    show(name);
- }
-}
-function go(){
- let val=document.getElementById("nic").value.trim();
- if(val==""){alert("请输入昵称再进入博客！");return;}
- localStorage.setItem("nicname",val);
- show(val);
-}
-function show(val){
- document.getElementById("inputName").style.display="none";
- document.getElementById("main").style.display="block";
- document.getElementById("n").innerText=val;
- showWelcome();
-}
-function change(){
- localStorage.removeItem("nicname");
- location.reload();
-}
-</script>
 </body>
 </html>
