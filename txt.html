@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>公共TXT聊天室</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,sans-serif}
+body{background:#121212;color:#eee;max-width:720px;margin:0 auto;padding:16px;height:100vh;display:flex;flex-direction:column}
+#msgBox{flex:1;overflow-y:auto;background:#1e1e1e;border-radius:12px;padding:14px;margin-bottom:12px}
+.msg{margin:6px 0;padding:8px 12px;border-radius:8px;max-width:85%}
+.other{background:#333;margin-right:auto}
+.info{color:#aaa;font-size:12px;text-align:center;margin:8px 0}
+.time{font-size:11px;opacity:0.6;margin-top:4px}
+.inputWrap{display:flex;gap:8px}
+#nick{width:120px;padding:10px;border:none;border-radius:8px;background:#2a2a2a;color:#fff}
+#input{flex:1;padding:10px;border:none;border-radius:8px;background:#2a2a2a;color:#fff}
+#send{padding:0 18px;border:none;border-radius:8px;background:#2563eb;color:#fff;cursor:pointer}
+</style>
+</head>
+<body>
+<div id="msgBox"></div>
+<div class="inputWrap">
+<input id="nick" placeholder="昵称" value="访客">
+<input id="input" placeholder="输入消息..." autocomplete="off">
+<button id="send">发送</button>
+</div>
+
+<script>
+// jsonbin.io 填写你自己的
+const BIN_ID = "6a911779f5f4af5e294c7007";
+const API_KEY = "$2a$10$QpZ57WdhrQ4/2SxB233eAe7vpE1b6tZKa32VS8O9/XSqtfBy7gWB2";
+
+const MAX_COUNT = 40;         // 最多保留40条
+const EXPIRE_MS = 10 * 60 * 1000; // 消息10分钟过期自动清除
+
+const msgBox = document.getElementById("msgBox");
+const nickEl = document.getElementById("nick");
+const inputEl = document.getElementById("input");
+const sendBtn = document.getElementById("send");
+
+// 获取并清理过期消息
+async function getCleanedMessageList(){
+  try{
+    const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`);
+    const data = await res.json();
+    let list = data.record.messages || [];
+    const now = Date.now();
+    // 过滤掉超过10分钟的消息
+    list = list.filter(m => (now - m.ts) < EXPIRE_MS);
+    // 超过最大条数，删除最旧
+    while(list.length > MAX_COUNT){
+      list.shift();
+    }
+    return list;
+  }catch(e){
+    return [];
+  }
+}
+
+function render(list){
+  msgBox.innerHTML = "";
+  list.forEach(m=>{
+    const div = document.createElement("div");
+    div.className = "msg other";
+    div.innerHTML = `<div>${m.nick}：${m.text}</div><div class="time">${m.timeStr}</div>`;
+    msgBox.appendChild(div);
+  })
+  msgBox.scrollTop = msgBox.scrollHeight;
+}
+
+async function saveList(list){
+  await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`,{
+    method:"PUT",
+    headers:{
+      "Content-Type":"application/json",
+      "X-Master-Key":API_KEY
+    },
+    body:JSON.stringify({messages:list})
+  })
+}
+
+async function loadMessages(){
+  const list = await getCleanedMessageList();
+  render(list);
+}
+
+async function send(){
+  const nick = nickEl.value.trim() || "访客";
+  const text = inputEl.value.trim();
+  if(!text) return;
+  inputEl.value = "";
+
+  const list = await getCleanedMessageList();
+  const nowTs = Date.now();
+  list.push({
+    nick,
+    text,
+    ts: nowTs,
+    timeStr: new Date().toLocaleString()
+  });
+  while(list.length > MAX_COUNT) list.shift();
+
+  await saveList(list);
+  loadMessages();
+}
+
+sendBtn.onclick = send;
+inputEl.onkeydown = e=>{if(e.key==="Enter") send()};
+
+loadMessages();
+// 3秒拉取一次
+setInterval(loadMessages, 3000);
+// 每30秒主动写一次库，把别人页面产生的过期消息清理掉
+setInterval(async ()=>{
+  const list = await getCleanedMessageList();
+  await saveList(list);
+},30000);
+</script>
+</body>
+</html>
