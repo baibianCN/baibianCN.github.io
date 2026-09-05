@@ -1,10 +1,244 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="refresh" content="0;url=https://pan.xunlei.com/s/VP-KKCC38SbmFc3MRf0d5xVHA1?pwd=m8ci">
-<style>html,body{margin:0;padding:0;display:none;}</style>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>baibian主页</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#050505;overflow:hidden;height:100vh;font-family:"Microsoft YaHei";}
+canvas,svg{position:fixed;inset:0}
+.wrap{position:relative;z-index:20;height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:20px;}
+.title{color:#fff;font-weight:900;letter-spacing:12px;text-shadow:0 0 30px rgba(255,255,255,.5);margin-bottom:40px}
+/* 电脑端原版样式 >=768px */
+.title{font-size:clamp(70px,10vw,140px);}
+.cards{display:flex;gap:28px;justify-content:center;}
+.parallax-layer{position:fixed;inset:-10%;pointer-events:none;opacity:.35}
+.card{
+width:280px;min-height:140px;color:#fff;cursor:pointer;
+padding:30px;border-radius:36px;position:relative;overflow:hidden;
+background:rgba(255,255,255,.08);
+backdrop-filter:blur(35px) saturate(180%) contrast(120%);
+border:1px solid rgba(255,255,255,.15);
+transition:.55s cubic-bezier(.22,1.4,.36,1);
+box-shadow:
+0 20px 60px rgba(0,0,0,.5),
+0 0 0 1px rgba(255,255,255,.08),
+0 0 40px rgba(120,180,255,.08);
+}
+.card.active{width:420px;transform:scale(1.05)}
+.card::after{
+content:"";
+position:absolute;
+inset:-1px;
+border-radius:inherit;
+background:linear-gradient(135deg,
+rgba(255,0,80,.12),
+transparent 20%,
+rgba(0,255,255,.12) 80%,
+transparent);
+mix-blend-mode:screen;
+pointer-events:none;
+}
+.card .scan{
+position:absolute;
+top:0;left:-150%;
+width:60%;height:100%;
+background:linear-gradient(90deg,transparent,rgba(255,255,255,.18),transparent);
+transform:skewX(-20deg);
+pointer-events:none;
+}
+.card:hover .scan{
+left:180%;
+transition:1.2s;
+}
+.card::before{
+content:"";position:absolute;inset:-50%;
+background:radial-gradient(circle at var(--mx,50%) var(--my,50%),rgba(255,255,255,.35),transparent 25%);
+filter:blur(25px);
+}
+.content{max-height:0;opacity:0;overflow:hidden;transition:.4s}
+.card.active .content{max-height:250px;opacity:1;margin-top:20px}
+.fps{position:fixed;top:10px;right:10px;color:#fff;background:rgba(0,0,0,.4);padding:8px 12px;border-radius:12px;z-index:99}
+.btn{padding:8px 12px;border:none;border-radius:10px;background:rgba(255,255,255,.15);color:#fff}
+
+/* 手机媒体查询 <768px 自动切换手机布局 */
+@media screen and (max-width:767px){
+    .title{
+        font-size:clamp(32px,12vw,60px);
+        letter-spacing:6px;
+        margin-bottom:24px;
+    }
+    .cards{
+        flex-direction:column;
+        gap:20px;
+        width:100%;
+        align-items:center;
+    }
+    .card{
+        width:100%;
+        max-width:340px;
+    }
+    .card.active{
+        width:100%;
+        max-width:340px;
+        transform:scale(1.02);
+    }
+    .wrap{
+        justify-content:flex‑start;
+        padding-top:12vh;
+        overflow-y:auto;
+    }
+    body{
+        overflow:hidden;
+    }
+}
+</style>
 </head>
 <body>
+<canvas id="bg"></canvas>
+<canvas id="city"></canvas><canvas id="fx"></canvas>
+<div class="fps" id="fps">FPS</div>
+<div class="wrap">
+<div class="title">BAIBIAN</div>
+<div class="cards">
+<div class="card" id="info">
+<div class="scan"></div><h2>我的信息</h2>
+<div class="content">
+邮箱：1341369826@qq.com<br><br>
+<button class="btn" onclick="copyText(event,'2142388268')">复制QQ</button><br><br>
+微信：jiang731227<br><br>
+<button class="btn" onclick="copyText(event,'zxcvlu12')">复制微信</button>
+</div>
+</div>
+<div class="card" id="fun">
+<div class="scan"></div><h2>网盘</h2>
+<div class="content">
+再点一下跳转
+</div>
+</div>
+</div>
+</div>
+<script>
+function copyText(e,t){e.stopPropagation();navigator.clipboard.writeText(t)}
+const bg=document.getElementById('bg'),city=document.getElementById('city'),fx=document.getElementById('fx');
+const b=bg.getContext('2d'),c=city.getContext('2d'),f=fx.getContext('2d');
+function resize(){bg.width=fx.width=city.width=innerWidth;bg.height=fx.height=city.height=innerHeight}
+resize();onresize=resize;
+let fps=document.getElementById('fps');
+let frameCount=0,last=performance.now();
+let mx=innerWidth/2,my=innerHeight/2;
+const rain=Array.from({length:35},()=>({x:Math.random()*innerWidth,y:Math.random()*innerHeight,s:1+Math.random()*2}));
+const dust=Array.from({length:120},()=>({x:Math.random()*innerWidth,y:Math.random()*innerHeight,z:1+Math.random()*3}));
+const ripple=[];
+addEventListener('mousemove',e=>{
+mx=e.clientX;my=e.clientY;
+ripple.push({x:mx,y:my,r:1,a:.12});
+});
+// 手机触摸支持，触摸产生波纹
+addEventListener('touchmove',e=>{
+    const touch=e.touches[0];
+    mx=touch.clientX;my=touch.clientY;
+    ripple.push({x:mx,y:my,r:1,a:.12});
+},{passive:true});
+
+document.querySelectorAll('.card').forEach(card=>{
+card.onmousemove=e=>{
+const r=card.getBoundingClientRect();
+card.style.setProperty('--mx',((e.clientX-r.left)/r.width*100)+'%');
+card.style.setProperty('--my',((e.clientY-r.top)/r.height*100)+'%');
+};
+// 手机触摸卡片触发光晕
+card.ontouchmove=e=>{
+    const touch=e.touches[0];
+    const r=card.getBoundingClientRect();
+    card.style.setProperty('--mx',((touch.clientX-r.left)/r.width*100)+'%');
+    card.style.setProperty('--my',((touch.clientY-r.top)/r.height*100)+'%');
+};
+card.onclick=()=>{
+if(card.id==='home'){
+location.href='https://space.bilibili.com/3546766624426592';
+return;
+}
+// 网盘卡片特殊逻辑
+if(card.id === "fun"){
+    if(card.classList.contains("active")){
+        // 已经展开，再次点击跳转新标签
+        window.open("https://baibian.kdns.fr","_blank");
+        return;
+    }else{
+        // 第一次点击：先关掉其他卡片，然后展开自己
+        document.querySelectorAll('.card').forEach(c=>{c.classList.remove('active')});
+        card.classList.add('active');
+        return;
+    }
+}
+// 其他普通卡片逻辑不变
+document.querySelectorAll('.card').forEach(c=>{if(c!==card)c.classList.remove('active')});
+card.classList.toggle('active');
+};
+});
+function loop(){
+requestAnimationFrame(loop);
+frameCount++;
+let now=performance.now();
+if(now-last>1000){
+fps.textContent='FPS '+frameCount;
+frameCount=0;
+last=now;
+}
+b.clearRect(0,0,innerWidth,innerHeight);
+let g=b.createLinearGradient(0,0,innerWidth,innerHeight);
+g.addColorStop(0,'rgba(0,180,255,.12)');
+g.addColorStop(1,'rgba(180,0,255,.12)');
+b.fillStyle=g;
+b.fillRect(0,0,innerWidth,innerHeight);
+for(const p of dust){
+p.x+=0.05*p.z;
+p.x+=(mx-innerWidth/2)*0.00002*p.z;
+if(p.x>innerWidth)p.x=0;
+b.beginPath();
+b.arc(p.x,p.y,p.z,0,7);
+b.fillStyle='rgba(255,255,255,.22)';
+b.fill();
+}
+b.strokeStyle='rgba(255,255,255,.08)';
+for(const r of rain){
+b.beginPath();
+b.moveTo(r.x,r.y);
+b.lineTo(r.x,r.y+8);
+b.stroke();
+r.y+=r.s;
+if(r.y>innerHeight){r.y=-10;r.x=Math.random()*innerWidth}
+}
+// city reflection layer
+c.clearRect(0,0,innerWidth,innerHeight);
+for(let i=0;i<25;i++){
+let x=i*(innerWidth/24);
+let h=100+Math.sin(i)*120;
+c.fillStyle='rgba(255,255,255,.03)';
+c.fillRect(x,innerHeight-h,40,h);
+}
+c.strokeStyle='rgba(120,180,255,.05)';
+for(let i=0;i<40;i++){
+c.beginPath();
+c.moveTo(0,i*25+(mx-innerWidth/2)*0.01);
+c.lineTo(innerWidth,i*25);
+c.stroke();
+}
+f.clearRect(0,0,innerWidth,innerHeight);
+for(let i=ripple.length-1;i>=0;i--){
+let r=ripple[i];
+f.beginPath();
+f.arc(r.x,r.y,r.r,0,7);
+f.strokeStyle=`rgba(255,255,255,${r.a})`;
+f.stroke();
+r.r+=4;
+r.a-=0.004;
+if(r.a<=0)ripple.splice(i,1);
+}
+}
+loop();
+</script>
 </body>
 </html>
