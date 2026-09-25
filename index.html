@@ -1,122 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0">
+<title>导航</title>
 <style>
-body{
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { height:100%; overflow:hidden; background:#000; }
 
-display: flex;
-padding: 18px;
-background-image: url("img/bg.jpg");
-background-size: cover;
-justify-content: center;
-align-items: center;
+  /* ================================================================
+     【1】内嵌网页：两个 iframe 铺满全屏
+     - 首页 iframe  →  id="frameHome"    src 改成你的网址1
+     - 网盘 iframe  →  id="frameNetdisk" src 改成你的网址2
+     ================================================================ */
+  .frame {
+    position:fixed; inset:0;
+    width:100%; height:100%;
+    border:0; background:#fff;
+    display:none;
+  }
+  .frame.show { display:block; }
 
- }
+  /* ================================================================
+     【2】底部液态玻璃导航
+     ================================================================ */
+  .dock {
+    position:fixed; left:50%;
+    bottom:calc(20px + env(safe-area-inset-bottom, 0px));
+    transform:translateX(-50%) translateZ(0);
+    display:flex; align-items:center;
+    padding:6px; border-radius:40px;
+    z-index:99999; isolation:isolate;
 
- a{
-  color: white;
-  text-decoration: none;
-  margin: 0 10px;
-  font-size: 18px;}
+    /* 白色磨砂玻璃底 */
+    background:rgba(255,255,255,0.38);
 
+    /* 折射滤镜 + 模糊 */
+    -webkit-backdrop-filter:blur(16px) saturate(180%) brightness(1.08) url(#lgRefract);
+    backdrop-filter:blur(16px) saturate(180%) brightness(1.08) url(#lgRefract);
 
-.box{
-  width: 85%;
-  height: 94.5vh;
-  background-color: rgb(255,255,255,0.15);
-  border-radius: 16px;
-  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(99px) ;
-  color: white;
-  display:flex;
-  flex-direction: column;
-  align-items: center;
- 
+    /* 玻璃厚度内阴影 */
+    box-shadow:
+      0 20px 50px -12px rgba(0,0,0,.35),
+      0 8px 22px -8px rgba(0,0,0,.20),
+      inset 0 1.5px 0 rgba(255,255,255,1),
+      inset 0 -1.5px 0 rgba(0,0,0,.06);
 
+    touch-action:none; user-select:none; -webkit-user-select:none;
+    transition:transform .6s cubic-bezier(.34,1.6,.5,1);
+    will-change:transform;
+    backface-visibility:hidden;
+  }
+  .dock.dragging { transform:translateX(-50%) scale(1.04) translateZ(0); }
 
- 
-  
-  text-align: center;
-}
+  /* 边缘折射高光环 */
+  .dock::before {
+    content:""; position:absolute; inset:0; border-radius:inherit;
+    padding:1.2px;
+    background:conic-gradient(from 200deg,
+      rgba(255,255,255,1)     0%,
+      rgba(255,255,255,0.2)  14%,
+      rgba(255,255,255,0.03) 28%,
+      rgba(255,255,255,0.75) 46%,
+      rgba(255,255,255,0.08) 62%,
+      rgba(255,255,255,0.7)  80%,
+      rgba(255,255,255,1)   100%);
+    -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor;
+    mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    mask-composite:exclude;
+    pointer-events:none; z-index:10;
+  }
 
-.avatar{
-  width: 150px;
-  height: 150px;
-  border-radius: 50%;
+  /* 内部液体反光 */
+  .dock::after {
+    content:""; position:absolute; inset:0; border-radius:inherit;
+    pointer-events:none; z-index:9;
+    background:
+      radial-gradient(140% 60% at 25% -20%, rgba(255,255,255,.85), transparent 55%),
+      radial-gradient(90% 55% at 80% 120%, rgba(255,255,255,.35), transparent 60%);
+    mix-blend-mode:overlay;
+  }
 
-  margin-top: 20px;
-}
+  /* ================================================================
+     【3】滑块：完全透明玻璃，透出底下网页内容
+     ================================================================ */
+  .blob {
+    position:absolute; top:6px; left:6px;
+    height:calc(100% - 12px); width:100px;
+    border-radius:34px; z-index:1; pointer-events:none;
 
-.kuaishou{
-  margin-top: 15px;
-  padding: 12px 30px;
-  background-color: rgba(255,255,255,0.1);
-  border-radius: 30px;
-  font-size: 15px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
+    /* 极透明白，让底下内容透出来 */
+    background:rgba(255,255,255,0.10);
 
-.kuaishou strong{
-  color: #ff6b35;
-}
+    /* 折射扭曲 + 轻微模糊 */
+    -webkit-backdrop-filter:blur(2px) saturate(180%) brightness(1.1) url(#lgRefractSoft);
+    backdrop-filter:blur(2px) saturate(180%) brightness(1.1) url(#lgRefractSoft);
 
-.content{
-  width: 90%;
-  flex: 1;
-  margin: 20px 0 25px 0;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-content: center;
-  gap: 12px;
-}
+    /* 玻璃边缘高光 */
+    box-shadow:
+      0 4px 14px rgba(0,0,0,.15),
+      inset 0 1.5px 0 rgba(255,255,255,1),
+      inset 0 -1.5px 0 rgba(255,255,255,.35),
+      inset 0 0 0 .5px rgba(255,255,255,.7);
 
-.content .card{
-  width: 150px;
-  height: 80px;
-  background-color: rgba(255,255,255,0.08);
-  border-radius: 16px;
-  backdrop-filter: blur(8px);
-  box-sizing: border-box;
-  transition: transform 0.3s, background-color 0.3s;
-}
+    transition:transform .75s cubic-bezier(.34,1.62,.5,1), width .55s cubic-bezier(.34,1.62,.5,1);
+    will-change:transform,width;
+    transform-origin:center;
+    transform:translate3d(0,0,0);
+  }
+  .dock.dragging .blob { transition:none; }
+  .blob::after {
+    content:""; position:absolute; inset:0; border-radius:inherit;
+    background:linear-gradient(180deg,
+      rgba(255,255,255,.4) 0%,
+      rgba(255,255,255,.03) 45%,
+      rgba(255,255,255,.15) 100%);
+    pointer-events:none;
+  }
 
-.content .card a{
-  text-decoration: none;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-  font-size: 16px;
-}
+  /* ================================================================
+     【4】图标按钮
+     ================================================================ */
+  .item {
+    position:relative; z-index:2;
+    width:100px; height:64px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:4px; color:rgba(0,0,0,.5); cursor:pointer;
+    transition:color .4s ease;
+  }
+  .item svg {
+    width:26px; height:26px; fill:none; stroke:currentColor;
+    stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round;
+    transition:transform .65s cubic-bezier(.34,1.62,.5,1), filter .3s;
+  }
+  .item span { font-size:11px; letter-spacing:.5px; font-weight:600; }
+  .item.active { color:#000; }
+  .item.active svg {
+    transform:translateY(-1px) scale(1.08);
+    filter:drop-shadow(0 1px 3px rgba(0,0,0,.2));
+  }
+  .item.press svg { transform:scale(.82); }
 
-
-
+  /* 释放光晕 */
+  .burst {
+    position:absolute; inset:-24px; border-radius:60px;
+    pointer-events:none; z-index:11;
+    background:radial-gradient(circle at var(--bx,50%) var(--by,50%),
+      rgba(255,255,255,.9), rgba(255,255,255,.2) 32%, transparent 62%);
+    opacity:0; transform:scale(.7);
+    transition:opacity .7s ease-out, transform .8s ease-out;
+    mix-blend-mode:screen;
+  }
+  .dock.bursting .burst {
+    opacity:1; transform:scale(1.5);
+    transition:opacity .08s, transform .7s cubic-bezier(.2,.8,.3,1);
+  }
 </style>
+</head>
+<body>
 
-<div class="box">
-  <img class="avatar" src="avatar.jpg" alt="Avatar">
-  <h1>我的主页</h1>
-  <p>欢迎来到我的主页</p>
-  <p>我目前在学习前端开发刚学习HTML和CSS谢谢</p>
- <a href="index.html">主页</a>
-  <a href="a.html">联系我</a>
-  <div class="kuaishou">
-    <span>📱 关注我的抖音：</span>
-    <strong>baibian53937</strong>
-  </div>
-  <div class="content">
-    <div class="card"><a href="https://github.com" target="_blank">GitHub</a></div>
-    <div class="card"><a href="https://www.bilibili.com" target="_blank">哔哩哔哩</a></div>
-    <div class="card"><a href="https://juejin.cn" target="_blank">掘金</a></div>
-    <div class="card"><a href="https://www.zhihu.com" target="_blank">知乎</a></div>
-    <div class="card"><a href="https://www.douyin.com" target="_blank">抖音</a></div>
-    <div class="card"><a href="https://www.baidu.com" target="_blank">百度</a></div>
-    <div class="card"><a href="https://www.csdn.net" target="_blank">CSDN</a></div>
-    <div class="card"><a href="https://developer.mozilla.org" target="_blank">MDN</a></div>
+<!-- ============================================================
+     ★★★ 这里改两个网址 ★★★
+     frameHome  →  首页要显示的网址
+     frameNetdisk → 网盘要显示的网址
+     ============================================================ -->
+<iframe class="frame show" id="frameHome"
+        src="ab.html"
+        allow="clipboard-write; fullscreen"></iframe>
+
+<iframe class="frame" id="frameNetdisk"
+        src="https://pan.xunlei.com/s/VP2NgusExj-uuFrQErr0vWBwA1?pwd=cbfs#"
+        allow="clipboard-write; fullscreen"></iframe>
+
+<!-- 折射滤镜：让透过玻璃的网页内容真的扭曲 -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="lgRefract" x="-30%" y="-30%" width="160%" height="160%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.006 0.010" numOctaves="2" seed="7" result="n"/>
+    <feGaussianBlur in="n" stdDeviation="1.2" result="sn"/>
+    <feDisplacementMap in="SourceGraphic" in2="sn" scale="22" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+  <filter id="lgRefractSoft" x="-20%" y="-20%" width="140%" height="140%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.012 0.016" numOctaves="1" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="14" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+
+<nav class="dock" id="dock">
+  <div class="burst"></div>
+  <div class="blob" id="blob"></div>
+
+  <!-- 首页 -->
+  <div class="item active" data-frame="frameHome">
+    <svg viewBox="0 0 24 24">
+      <path d="M3.5 10.5 12 4l8.5 6.5"/>
+      <path d="M5.8 9.4v10.2a.8.8 0 0 0 .8.8h10.8a.8.8 0 0 0 .8-.8V9.4"/>
+      <path d="M9.8 20.4v-5.6h4.4v5.6"/>
+    </svg>
+    <span>首页</span>
   </div>
 
-</div>
+  <!-- 网盘 -->
+  <div class="item" data-frame="frameNetdisk">
+    <svg viewBox="0 0 24 24">
+      <path d="M4 7.5h16v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/>
+      <path d="M2.5 6.5h19"/>
+      <circle cx="12" cy="13.5" r="2"/>
+    </svg>
+    <span>网盘</span>
+  </div>
+</nav>
+
+<script>
+(function(){
+  const dock   = document.getElementById('dock');
+  const blob   = document.getElementById('blob');
+  const items  = Array.from(dock.querySelectorAll('.item'));
+  const frames = document.querySelectorAll('.frame');
+
+  let active = dock.querySelector('.item.active');
+  let dragging = false, moved = false, pressItem = null;
+  let startPointerX = 0, startBlobX = 0, blobX = 0;
+  let minX = 0, maxX = 0;
+  let lastPointerX = 0, lastTime = 0, velocity = 0;
+  let downX = 0, downY = 0;
+
+  /* 初始化滑块位置 */
+  function initBlob() {
+    const dr = dock.getBoundingClientRect();
+    const ir = active.getBoundingClientRect();
+    if (!ir.width) return;
+    blobX = ir.left - dr.left - 6;
+    minX = items[0].getBoundingClientRect().left - dr.left - 6;
+    maxX = items[items.length - 1].getBoundingClientRect().left - dr.left - 6;
+    blob.style.transition = 'none';
+    blob.style.width = ir.width + 'px';
+    blob.style.transform = 'translate3d(' + blobX + 'px,0,0) scale(1,1)';
+    requestAnimationFrame(() => { blob.style.transition = ''; });
+  }
+
+  /* 切换 iframe */
+  function switchFrame(item) {
+    const fid = item.dataset.frame;
+    if (!fid) return;
+    frames.forEach(f => f.classList.toggle('show', f.id === fid));
+  }
+
+  /* 吸附到目标 */
+  function snapTo(item) {
+    if (!item) return;
+    const dr = dock.getBoundingClientRect();
+    const ir = item.getBoundingClientRect();
+    const targetX = ir.left - dr.left - 6;
+
+    blob.style.transition = 'none';
+    void blob.offsetWidth;
+    blob.style.transition =
+      'transform .75s cubic-bezier(.34,1.62,.5,1), width .55s cubic-bezier(.34,1.62,.5,1)';
+
+    blobX = targetX;
+    blob.style.width = ir.width + 'px';
+    blob.style.transform = 'translate3d(' + targetX + 'px,0,0) scale(1,1)';
+
+    active = item;
+    items.forEach(it => it.classList.toggle('active', it === item));
+    switchFrame(item);
+  }
+
+  function nearestItem() {
+    const dr = dock.getBoundingClientRect();
+    const blobCenter = blobX + items[0].offsetWidth / 2;
+    let nearest = items[0], minDist = Infinity;
+    items.forEach(it => {
+      const r = it.getBoundingClientRect();
+      const center = r.left - dr.left + r.width / 2;
+      const dist = Math.abs(center - blobCenter);
+      if (dist < minDist) { minDist = dist; nearest = it; }
+    });
+    return nearest;
+  }
+
+  function pointerGlow(x, y) {
+    const r = dock.getBoundingClientRect();
+    dock.style.setProperty('--bx', ((x - r.left) / r.width * 100) + '%');
+    dock.style.setProperty('--by', ((y - r.top) / r.height * 100) + '%');
+  }
+
+  dock.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    try { dock.setPointerCapture(e.pointerId); } catch(_) {}
+    dragging = true; moved = false;
+    dock.classList.add('dragging');
+    startPointerX = e.clientX; startBlobX = blobX;
+    lastPointerX = e.clientX; lastTime = performance.now(); velocity = 0;
+    downX = e.clientX; downY = e.clientY;
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    pressItem = el && el.closest('.item');
+    if (pressItem) pressItem.classList.add('press');
+  });
+
+  dock.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    e.preventDefault();
+    if (Math.abs(e.clientX - downX) > 6 || Math.abs(e.clientY - downY) > 6) moved = true;
+
+    let nx = startBlobX + (e.clientX - startPointerX);
+    if (nx < minX) nx = minX;
+    if (nx > maxX) nx = maxX;
+
+    const now = performance.now(), dt = now - lastTime;
+    if (dt > 0) {
+      const v = (e.clientX - lastPointerX) / dt * 16;
+      velocity = velocity * 0.6 + v * 0.4;
+    }
+    lastPointerX = e.clientX; lastTime = now; blobX = nx;
+
+    const sp = Math.min(Math.abs(velocity) * 0.006, 0.28);
+    blob.style.transition = 'none';
+    blob.style.transform = 'translate3d(' + blobX + 'px,0,0) scale(' +
+      (1 + sp) + ',' + (1 - sp * 0.62) + ')';
+
+    if (moved) {
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      const it = el && el.closest('.item');
+      if (it && it !== active) {
+        items.forEach(x => x.classList.toggle('active', x === it));
+        active = it;
+      }
+    }
+  });
+
+  function end(e) {
+    if (!dragging) return;
+    dragging = false;
+    dock.classList.remove('dragging');
+    items.forEach(it => it.classList.remove('press'));
+
+    pointerGlow(e.clientX, e.clientY);
+    dock.classList.add('bursting');
+    setTimeout(() => dock.classList.remove('bursting'), 600);
+
+    let target;
+    if (!moved && pressItem) {
+      target = pressItem;
+    } else {
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      target = (el && el.closest('.item')) || nearestItem();
+    }
+    pressItem = null;
+
+    snapTo(target);
+  }
+
+  dock.addEventListener('pointerup', end);
+  dock.addEventListener('pointercancel', () => {
+    if (!dragging) return;
+    dragging = false;
+    dock.classList.remove('dragging');
+    items.forEach(it => it.classList.remove('press'));
+    pressItem = null;
+    snapTo(active);
+  });
+
+  window.addEventListener('load', () => setTimeout(initBlob, 150));
+  if (document.readyState === 'complete') setTimeout(initBlob, 150);
+  window.addEventListener('resize', () => {
+    const dr = dock.getBoundingClientRect();
+    maxX = items[items.length - 1].getBoundingClientRect().left - dr.left - 6;
+    const targetX = active.getBoundingClientRect().left - dr.left - 6;
+    blobX = targetX;
+    blob.style.transition = 'none';
+    blob.style.transform = 'translate3d(' + targetX + 'px,0,0) scale(1,1)';
+  });
+})();
+</script>
 </body>
 </html>
